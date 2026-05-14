@@ -1,0 +1,876 @@
+{
+  "name": "Linkedin Post Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "5bc47f11-1603-4670-aed7-d62e74e11e82",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1CBxPvvib_xt_XnJtvBNaGcoDXh7vWjf-01V4RCepX8k",
+          "mode": "list",
+          "cachedResultName": "LinkedIn post topics"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Post topics"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Status ",
+              "lookupValue": "NOT-TAKEN"
+            },
+            {
+              "lookupColumn": "Date",
+              "lookupValue": "={{ $now.format('M/dd/yyyy') }}"
+            },
+            {
+              "lookupColumn": "Flag",
+              "lookupValue": "=Yes"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "63ecb8ba-75ab-4830-ba9e-acdad58b2cbb",
+      "name": "Get row(s) in sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        576,
+        448
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4ddaZjlkpvlP0KED",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const row = $input.first().json;\nreturn [{ json: {\n  userMessage: row.Topic,\n  from: 1171832639,\n  source: 'schedule',\n  rowNumber: row.row_number\n} }];"
+      },
+      "id": "114e0667-fa8b-40e9-b0a8-fc88c3152d75",
+      "name": "Normalize (Schedule)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        448
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "09f2672e-822b-4362-ae32-cec6e391e7a4",
+      "name": "Merge Paths",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1024,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "64351b10-322b-45cd-9e83-dd043379ad6b",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        112
+      ],
+      "webhookId": "6676a5f5-2413-45d8-a190-f1df53035bf3",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZAiZtjPnhu0jwYKR",
+          "name": "Linkedin bot Access token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are Leo, a LinkedIn content assistant for Telegram.\n\nAnalyze this user message:\n\n{{ $json.message.text }}\n\nReturn:\n* YES → if the user wants a LinkedIn post\n* Casual short reply → for greetings, thanks, casual chat\n* If unrelated: \"I'm a LinkedIn post generation assistant 😊 Send me a topic!\"\n\nLinkedIn-related topics include: AI, startups, software engineering, career growth, productivity, tech trends, cloud/devops, machine learning, programming, business lessons, entrepreneurship, leadership, developer tools, personal branding, remote work, open source.",
+        "options": {
+          "systemMessage": "You are Leo, a LinkedIn content assistant.\n1. Greetings/chat -> reply warmly, ask for a topic.\n2. Off-topic -> \"Hey! I'm Leo and I only help create LinkedIn posts. Want to create one?\"\n3. LinkedIn post topic -> output ONLY: YES\n4. NEVER write the actual post content yourself."
+        }
+      },
+      "id": "f62c4961-8e00-4013-b077-957f48bdacf0",
+      "name": "LinkedIn Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "ce8cf31a-9bf5-4a0f-99e2-5b1378b49016",
+      "name": "OpenAI (Extractor)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        224
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "XESDYUDTNHxINQhc",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.message.text }}"
+      },
+      "id": "499fbb9d-25db-4e48-a124-328769b912f4",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        368,
+        224
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "uP7JCrDnMHz9Disl",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "yes-check",
+              "leftValue": "={{ $('LinkedIn Agent').item.json.output.trim().toUpperCase() }}",
+              "operator": {
+                "type": "string",
+                "operation": "startsWith"
+              },
+              "rightValue": "YES"
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "679c05ba-775f-4e4b-8ab1-0c9987bac287",
+      "name": "Is LinkedIn post?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        576,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const userMessage = $('Telegram Trigger').first().json.message.text;\nconst from = $('Telegram Trigger').first().json.message.from.id;\nreturn [{ json: {\n  userMessage,\n  from,\n  source: 'telegram',\n  rowNumber: null\n} }];"
+      },
+      "id": "08d247d7-1d79-4a41-bf20-340d10e5a1d9",
+      "name": "Normalize (Telegram)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        16
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message.from.id }}",
+        "text": "={{ $('LinkedIn Agent').item.json.output }}",
+        "additionalFields": {}
+      },
+      "id": "aeebd5bd-ce7a-4042-9a93-7664aadab546",
+      "name": "Conversational Reply",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        208
+      ],
+      "webhookId": "00abdf65-3792-4bb4-940e-8545d137d419",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZAiZtjPnhu0jwYKR",
+          "name": "Linkedin bot Access token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a professional LinkedIn post for the following topic:\n\n\"{{ $json.userMessage }}\"\n\nOutput EXACTLY:\n\nTOPIC: <short one-line topic summary>\n\nPOST DRAFT: <full LinkedIn post content>\n\nRequirements:\n* Human, natural, engaging tone with relevant emojis.\n* Short readable paragraphs, strong hook, real insights.\n* End with a question or CTA.\n* Include 5–10 relevant hashtags.\n* No extra text outside the format.",
+        "options": {
+          "systemMessage": "You are an expert LinkedIn content writer. Write engaging posts under 1300 characters. Strong hook, CTA at end. Output ONLY:\nTOPIC: <summary>\nPOST DRAFT:\n<content>\nNo preamble or extra text."
+        }
+      },
+      "id": "2595e989-e9f1-4525-9f17-f7f98a9d64de",
+      "name": "Content Generation Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1248,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "8b6f995c-9296-49ed-b258-3ba3b3f2639e",
+      "name": "OpenAI (Content)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1328,
+        480
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "XESDYUDTNHxINQhc",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const agentOutput = $('Content Generation Agent').first().json.output || '';\nconst topicMatch = agentOutput.match(/TOPIC:\\s*(.+)/i);\nconst draftMatch = agentOutput.match(/POST DRAFT:\\s*([\\s\\S]+)/i);\nconst topic = topicMatch ? topicMatch[1].trim() : '';\nconst postDraft = draftMatch ? draftMatch[1].trim() : '';\nconst from = $input.first().json.from;\nconst source = $input.first().json.source;\nconst rowNumber = $input.first().json.rowNumber;\nreturn [{ json: { topic, postDraft, from, source, rowNumber } }];"
+      },
+      "id": "7ea87252-b074-4086-8c88-93efe7a7df6f",
+      "name": "Extract Draft",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendAndWait",
+        "chatId": "=1171832639",
+        "message": "=📋 *Post Ready*\n\nTopic: {{ $json.topic }}\n\n{{ $json.postDraft }}\n\nApprove to post on LinkedIn or Decline to skip.",
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double"
+          }
+        },
+        "options": {}
+      },
+      "id": "4646dad8-bfbb-48b2-84eb-02bfc3ce341e",
+      "name": "LinkedIn post okay?",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1824,
+        256
+      ],
+      "webhookId": "014b0ca6-6606-419e-a217-4d824a91f6b8",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZAiZtjPnhu0jwYKR",
+          "name": "Linkedin bot Access token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "yes-check",
+              "leftValue": "={{ $json.data.approved }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": "YES"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4268413f-d858-4c2e-bfd9-a77bd84c49f5",
+      "name": "Human in Loop",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2048,
+        256
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.linkedin.com/v2/userinfo",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {}
+      },
+      "id": "d718cf57-4b49-4e00-86fb-b80243ec78b6",
+      "name": "Get Profile",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2272,
+        160
+      ],
+      "credentials": {
+        "linkedInOAuth2Api": {
+          "id": "brwLJOKTAbo7yo08",
+          "name": "LinkedIn OAuth2 API"
+        },
+        "httpHeaderAuth": {
+          "id": "iCjY9Kn63i395WZY",
+          "name": "Header Auth account"
+        },
+        "oAuth2Api": {
+          "id": "Sv1hP3j3qnx14ZFd",
+          "name": "LinkedIn OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.linkedin.com/v2/ugcPosts",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ author: \"urn:li:person:\" + $node[\"Get Profile\"].json[\"sub\"], lifecycleState: \"PUBLISHED\", specificContent: { \"com.linkedin.ugc.ShareContent\": { shareCommentary: { text: $('Extract Draft').item.json.postDraft }, shareMediaCategory: \"NONE\" } }, visibility: { \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\" } }) }}",
+        "options": {}
+      },
+      "id": "2475b9b4-d1f5-4b1b-9c73-d07066f81f3e",
+      "name": "Post to LinkedIn",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        2496,
+        160
+      ],
+      "credentials": {
+        "oAuth2Api": {
+          "id": "Sv1hP3j3qnx14ZFd",
+          "name": "LinkedIn OAuth2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "34ed4238-c00a-80cf-9627-e6fc30f6441f",
+          "mode": "list",
+          "cachedResultName": "LinkedIn Post generator"
+        },
+        "title": "={{ $('Extract Draft').item.json.topic }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Date|date",
+              "type": "date",
+              "includeTime": false,
+              "date": "={{ $now.toISO() }}"
+            },
+            {
+              "key": "Status|status",
+              "statusValue": "Published"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c82eeac1-ddc0-4b0a-b5d4-43438d8a0e9e",
+      "name": "Save Post to Notion",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2720,
+        160
+      ],
+      "credentials": {
+        "notionOAuth2Api": {
+          "id": "OswaymMbewUJtrzc",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "schedule-check",
+              "leftValue": "={{ $('Extract Draft').item.json.source }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "schedule"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bc10367f-6870-4649-a5fd-7136861ef48a",
+      "name": "Is Schedule source?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2896,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1CBxPvvib_xt_XnJtvBNaGcoDXh7vWjf-01V4RCepX8k",
+          "mode": "list",
+          "cachedResultName": "LinkedIn post topics"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Post topics"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $('Extract Draft').item.json.rowNumber }}",
+            "Status ": "TAKEN"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status ",
+              "displayName": "Status ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3a9be33c-7487-46b0-9fab-f9e291d9e435",
+      "name": "Mark Sheet as TAKEN",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3168,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "4ddaZjlkpvlP0KED",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "=1171832639",
+        "text": "=✅ Post is now live on LinkedIn!\n\nTopic: {{ $('Extract Draft').item.json.topic }}",
+        "additionalFields": {}
+      },
+      "id": "99ab58f9-5613-4a09-9925-223a48c66180",
+      "name": "POST live",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3392,
+        160
+      ],
+      "webhookId": "d1781baf-47e1-4f39-a3c5-1f80e2afdd2a",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZAiZtjPnhu0jwYKR",
+          "name": "Linkedin bot Access token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.from }}",
+        "text": "❌ LinkedIn post has been declined.",
+        "additionalFields": {}
+      },
+      "id": "59c631b0-9e1e-4327-8dc7-f5352ec6d205",
+      "name": "Post declined",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2272,
+        352
+      ],
+      "webhookId": "02d544ba-f6a8-4145-b53e-ef51659325f9",
+      "credentials": {
+        "telegramApi": {
+          "id": "ZAiZtjPnhu0jwYKR",
+          "name": "Linkedin bot Access token"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Normalize (Schedule)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize (Schedule)": {
+      "main": [
+        [
+          {
+            "node": "Merge Paths",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Paths": {
+      "main": [
+        [
+          {
+            "node": "Content Generation Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn Agent": {
+      "main": [
+        [
+          {
+            "node": "Is LinkedIn post?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI (Extractor)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "LinkedIn Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "LinkedIn Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is LinkedIn post?": {
+      "main": [
+        [
+          {
+            "node": "Normalize (Telegram)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Conversational Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize (Telegram)": {
+      "main": [
+        [
+          {
+            "node": "Merge Paths",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Content Generation Agent": {
+      "main": [
+        [
+          {
+            "node": "Extract Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI (Content)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Content Generation Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Draft": {
+      "main": [
+        [
+          {
+            "node": "LinkedIn post okay?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "LinkedIn post okay?": {
+      "main": [
+        [
+          {
+            "node": "Human in Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Human in Loop": {
+      "main": [
+        [
+          {
+            "node": "Get Profile",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Post declined",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Profile": {
+      "main": [
+        [
+          {
+            "node": "Post to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Save Post to Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Post to Notion": {
+      "main": [
+        [
+          {
+            "node": "Is Schedule source?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Schedule source?": {
+      "main": [
+        [
+          {
+            "node": "Mark Sheet as TAKEN",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "POST live",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Sheet as TAKEN": {
+      "main": [
+        [
+          {
+            "node": "POST live",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "bde8fa85-0ebf-424a-a5b3-251bfae33973",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "fdecfdb88fe3bf5698b3b2feea1d951c1a29e28750daff4c8a59cf740f026b09"
+  },
+  "id": "dA8S4FdYrRYbs1K1",
+  "tags": []
+}
