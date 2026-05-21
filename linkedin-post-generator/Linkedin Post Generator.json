@@ -118,7 +118,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=You are Leo, a LinkedIn content assistant for Telegram.\n\nAnalyze this user message:\n\n{{ $json.message.text }}\n\nReturn:\n* YES → if the user wants a LinkedIn post\n* Casual short reply → for greetings, thanks, casual chat\n* If unrelated: \"I'm a LinkedIn post generation assistant 😊 Send me a topic!\"\n\nLinkedIn-related topics include: AI, startups, software engineering, career growth, productivity, tech trends, cloud/devops, machine learning, programming, business lessons, entrepreneurship, leadership, developer tools, personal branding, remote work, open source.",
+        "text": "=You are a LinkedIn content assistant for Telegram.\n\nAnalyze this user message:\n\n{{ $json.message.text }}\n\nRules:\n\n1. Return ONLY \"YES\"\n\n   * If the message is asking for:\n\n     * a LinkedIn post\n     * content creation\n     * professional writing\n     * tech/business insights\n     * career advice\n     * startup/productivity discussions\n     * AI or software topics\n     * developer-related concepts\n     * emerging technologies\n     * acronyms or technical concepts related to software/AI/cloud/devops\n\nExamples include:\nAI, ML, LLMs, MCP, agents, RAG, DevOps, Kubernetes, Docker, APIs, SaaS, startups, system design, programming, cloud, cybersecurity, engineering, leadership, productivity, open source, databases, automation, n8n, workflows, remote work, branding, entrepreneurship.\n\n2. Return a short casual reply for:\n\n   * greetings\n   * thanks\n   * casual conversation\n\nExamples:\n\"hi\" → \"Hey 😊\"\n\"thanks\" → \"You're welcome 😊\"\n\n3. If unrelated, return EXACTLY:\n   I'm a LinkedIn post generation assistant 😊 Send me a topic!\n\nImportant:\n\n* Return ONLY the response.\n* No explanations.\n* No markdown.\n* No extra text.",
         "options": {
           "systemMessage": "You are Leo, a LinkedIn content assistant.\n1. Greetings/chat -> reply warmly, ask for a topic.\n2. Off-topic -> \"Hey! I'm Leo and I only help create LinkedIn posts. Want to create one?\"\n3. LinkedIn post topic -> output ONLY: YES\n4. NEVER write the actual post content yourself."
         }
@@ -226,7 +226,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $json.message.from.id }}",
+        "chatId": "=1171832639",
         "text": "={{ $('LinkedIn Agent').item.json.output }}",
         "additionalFields": {}
       },
@@ -249,9 +249,9 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Generate a professional LinkedIn post for the following topic:\n\n\"{{ $json.userMessage }}\"\n\nOutput EXACTLY:\n\nTOPIC: <short one-line topic summary>\n\nPOST DRAFT: <full LinkedIn post content>\n\nRequirements:\n* Human, natural, engaging tone with relevant emojis.\n* Short readable paragraphs, strong hook, real insights.\n* End with a question or CTA.\n* Include 5–10 relevant hashtags.\n* No extra text outside the format.",
+        "text": "=Topic: {{ $('Merge Paths').item.json.userMessage }}\n\nResearch Data:\n{{ $json.results.map(r => `Title: ${r.title}\\nSnippet: ${r.snippet}\\nURL: ${r.url}`).join('\\n\\n') }}",
         "options": {
-          "systemMessage": "You are an expert LinkedIn content writer. Write engaging posts under 1300 characters. Strong hook, CTA at end. Output ONLY:\nTOPIC: <summary>\nPOST DRAFT:\n<content>\nNo preamble or extra text."
+          "systemMessage": "You are an expert LinkedIn content writer and tech researcher.\n\nYour job is to write a professional, engaging LinkedIn post based on:\n1. The topic provided by the user\n2. The research data provided below\n\nWriting Rules:\n- Start with a strong hook in the first 1-2 lines\n- Use short readable paragraphs\n- Professional but conversational tone\n- Include relevant emojis naturally (not excessive)\n- Add real insights from the research — statistics, trends, examples\n- Avoid buzzword stuffing\n- Include 5–10 highly relevant hashtags\n- 150–300 words only\n- Sound human, not AI-generated\n\nOutput EXACTLY in this format:\nTOPIC: <short one-line topic summary>\nPOST DRAFT: <full LinkedIn post>"
         }
       },
       "id": "2595e989-e9f1-4525-9f17-f7f98a9d64de",
@@ -259,7 +259,7 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
       "position": [
-        1248,
+        1456,
         256
       ]
     },
@@ -298,7 +298,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1600,
+        1808,
         256
       ]
     },
@@ -319,7 +319,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1824,
+        2032,
         256
       ],
       "webhookId": "014b0ca6-6606-419e-a217-4d824a91f6b8",
@@ -360,7 +360,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2048,
+        2256,
         256
       ]
     },
@@ -376,7 +376,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2272,
+        2480,
         160
       ],
       "credentials": {
@@ -423,7 +423,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.3,
       "position": [
-        2496,
+        2704,
         160
       ],
       "credentials": {
@@ -465,7 +465,7 @@
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        2720,
+        2928,
         160
       ],
       "credentials": {
@@ -504,7 +504,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        2896,
+        3104,
         160
       ]
     },
@@ -560,7 +560,7 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        3168,
+        3376,
         80
       ],
       "credentials": {
@@ -581,7 +581,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        3392,
+        3600,
         160
       ],
       "webhookId": "d1781baf-47e1-4f39-a3c5-1f80e2afdd2a",
@@ -594,7 +594,7 @@
     },
     {
       "parameters": {
-        "chatId": "={{ $json.from }}",
+        "chatId": "=1171832639",
         "text": "❌ LinkedIn post has been declined.",
         "additionalFields": {}
       },
@@ -603,14 +603,34 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        2272,
-        352
+        2576,
+        480
       ],
       "webhookId": "02d544ba-f6a8-4145-b53e-ef51659325f9",
       "credentials": {
         "telegramApi": {
           "id": "ZAiZtjPnhu0jwYKR",
           "name": "Linkedin bot Access token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "query": "=Latest trends and real world impact of {{ $json.userMessage }}",
+        "options": {}
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavily",
+      "typeVersion": 1,
+      "position": [
+        1232,
+        256
+      ],
+      "id": "8ee7594e-4371-4bb6-a3e6-99f57ada6021",
+      "name": "Web Search",
+      "credentials": {
+        "tavilyApi": {
+          "id": "GSuQiRW7YMx1iOKi",
+          "name": "Tavily account"
         }
       }
     }
@@ -654,7 +674,7 @@
       "main": [
         [
           {
-            "node": "Content Generation Agent",
+            "node": "Web Search",
             "type": "main",
             "index": 0
           }
@@ -857,6 +877,17 @@
           }
         ]
       ]
+    },
+    "Web Search": {
+      "main": [
+        [
+          {
+            "node": "Content Generation Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -865,10 +896,11 @@
     "binaryMode": "separate",
     "availableInMCP": true
   },
-  "versionId": "bde8fa85-0ebf-424a-a5b3-251bfae33973",
+  "versionId": "553205d7-d6cf-4ee1-8293-bc9688889606",
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp",
+    "templateCredsSetupCompleted": true,
     "instanceId": "fdecfdb88fe3bf5698b3b2feea1d951c1a29e28750daff4c8a59cf740f026b09"
   },
   "id": "dA8S4FdYrRYbs1K1",
