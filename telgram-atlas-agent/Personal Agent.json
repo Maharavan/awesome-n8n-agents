@@ -1,0 +1,398 @@
+{
+  "name": "Personal Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "1d821fbe-6f09-4b1e-9f05-6c509a54c463",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        112
+      ],
+      "webhookId": "6db0ecac-d91a-425f-a3b9-6fdb38067567",
+      "credentials": {
+        "telegramApi": {
+          "id": "934rndzLX9noiL5M",
+          "name": "Telegram agent"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Message: {{ $json.message.text }}",
+        "options": {
+          "systemMessage": "You are Atlas, a helpful AI assistant on Telegram.\n\nToday's date and time (IST, UTC+5:30): {{ new Date().toLocaleString('en-IN', {timeZone:'Asia/Kolkata'}) }}\n\nYou have access to the following tools — use them when needed:\n- web_search: Search the internet for current or factual information\n- calculator: Perform math calculations\n- weather_tool: Get current weather for a city\n- gmail_send: Send an email\n- gmail_get: Read emails from inbox\n- calendar_get_events: Fetch calendar events for a date range\n- calendar_create_event: Create a new calendar event\n\n## MOST IMPORTANT RULE — WEB SEARCH\n\nYou MUST use web_search in ALL of these situations:\n- User asks about news, current events, recent updates\n- User asks about any person (who is X, what did X do)\n- User asks about any company, product, service, or technology\n- User asks factual questions you are not 100% certain about\n- User asks \"what is\", \"who is\", \"how does\", \"what happened\", \"latest\", \"recent\"\n- ANY question about the external world\n\nDo NOT answer from memory alone. ALWAYS search first for factual questions.\n\n## Decision Guide\n\n- Greeting or pure small talk (\"hi\", \"how are you\") → reply naturally, no tools\n- Math or calculation → use calculator\n- Weather query → use weather_tool\n- Factual / informational question → use web_search (ALWAYS)\n- User wants to send an email → gmail_send flow\n- User wants to read emails → use gmail_get\n- User asks about schedule/calendar → use calendar_get_events\n- User wants to schedule/create an event → calendar_create flow\n\n## calendar_get_events flow\nWhen the user asks about their schedule, events, or calendar:\n1. Determine the date the user is asking about (today, tomorrow, a specific date, this week)\n2. Compute timeMin and timeMax in UTC, accounting for IST = UTC+5:30:\n   - Start of day IST = previous calendar day at 18:30:00 UTC\n   - End of day IST = same calendar day at 18:29:59 UTC\n3. ALWAYS pass both timeMin and timeMax to the tool\n4. List ALL events returned — do not filter or skip any\n\nExample for \"today\" when today is 2026-05-24 IST:\n- timeMin = \"2026-05-23T18:30:00Z\"\n- timeMax = \"2026-05-24T18:29:59Z\"\n\nExample for \"tomorrow\" when today is 2026-05-24 IST:\n- timeMin = \"2026-05-24T18:30:00Z\"\n- timeMax = \"2026-05-25T18:29:59Z\"\n\nCRITICAL: Never call calendar_get_events without both timeMin and timeMax. Without them, the Google Calendar API only returns events from the current moment onward, missing events earlier in the day that already started or were created before.\n\n## calendar_create flow\nOnly when user explicitly wants to create or schedule an event.\nExtract: title, date, time from message. Ask for missing parts ONE at a time.\nConfirm details before creating. Convert IST times to UTC (subtract 5h30m) for start/end.\n\n## gmail_send flow\nOnly when user explicitly wants to send an email.\nExtract: recipient, subject, body. Ask for missing parts ONE at a time.\nShow drafted email and confirm before sending.\n\n## gmail_get flow\nOnly when user explicitly wants to check or read emails.\n\n## Rules\n- Never hallucinate facts — always use web_search when in doubt\n- Summarize tool results clearly and concisely\n- Keep responses under 500 characters unless asked for more\n- Natural, helpful, direct tone"
+        }
+      },
+      "id": "56a38920-2013-4b21-b7f4-e4a364946029",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5",
+          "cachedResultName": "gpt-5"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "id": "dbe659da-62f0-4ec1-9e6b-4b3d6cdb0c43",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        336
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "XESDYUDTNHxINQhc",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "id": "532bd860-68ef-4f43-b48c-4121d51301c1",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        352,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "query": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Query', 'The search query to look up on the web') }}",
+        "options": {}
+      },
+      "id": "093d7a0b-4c02-4f27-ac88-f45fc1948839",
+      "name": "Web search",
+      "type": "@tavily/n8n-nodes-tavily.tavilyTool",
+      "typeVersion": 1,
+      "position": [
+        480,
+        336
+      ],
+      "credentials": {
+        "tavilyApi": {
+          "id": "GSuQiRW7YMx1iOKi",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "0b957d89-852b-4a9f-b7bb-625c80d4a87c",
+      "name": "Calculator",
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        608,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "cityName": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('City', 'City name to get weather for') }}",
+        "language": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Language', 'Language for weather response') }}"
+      },
+      "id": "753c24eb-168d-49ae-8b0f-e8e493bcb0ac",
+      "name": "Weather Tool",
+      "type": "n8n-nodes-base.openWeatherMapTool",
+      "typeVersion": 1,
+      "position": [
+        736,
+        336
+      ],
+      "credentials": {
+        "openWeatherMapApi": {
+          "id": "FdbiSBljUP8dx2ip",
+          "name": "OpenWeatherMap account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', 'Recipient email address') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', 'Email subject line') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', 'Email body content') }}",
+        "options": {}
+      },
+      "id": "d43bb83f-27a7-4bf1-b5a0-3e94f68b471c",
+      "name": "Gmail Tool - Send Email",
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        864,
+        336
+      ],
+      "webhookId": "b4b7b76c-46ce-4d11-9650-360392b23708",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "3mzl4soG9uQXglHm",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {}
+      },
+      "id": "984bd1d2-4124-4c10-ac60-5e9479156a90",
+      "name": "Gmail Tool - Get Email",
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        992,
+        336
+      ],
+      "webhookId": "56319da3-3860-4cdf-af72-cada24097244",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "3mzl4soG9uQXglHm",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "primary"
+        },
+        "returnAll": true,
+        "timeMin": "={{ $now.minus({ week: 1 }) }}",
+        "options": {}
+      },
+      "id": "5271d3c9-66df-47d5-954b-462cabe904e5",
+      "name": "Calendar - Get Events",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        336
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "quQeORxROcsb1pL7",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "primary"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('start', 'Event start datetime in ISO 8601 format e.g. 2026-05-25T10:00:00') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('end', 'Event end datetime in ISO 8601 format e.g. 2026-05-25T11:00:00') }}",
+        "additionalFields": {
+          "attendees": [],
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('description', 'Optional description or notes for the event') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('summary', 'Title/name of the calendar event') }}"
+        }
+      },
+      "id": "3c880468-a78f-4bba-a438-469d3a1bf803",
+      "name": "Calendar - Create Event",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1248,
+        336
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "quQeORxROcsb1pL7",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "id": "f646104c-f5b2-4806-ab3e-7411e146f99c",
+      "name": "Send a text message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1456,
+        112
+      ],
+      "webhookId": "9d9bc06c-9c35-49f9-aad0-24b91f33ea0f",
+      "credentials": {
+        "telegramApi": {
+          "id": "934rndzLX9noiL5M",
+          "name": "Telegram agent"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Web search": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weather Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Tool - Send Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Tool - Get Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar - Get Events": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calendar - Create Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "09ef7b36-cf4a-4d43-9a58-b0ab54117098",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "fdecfdb88fe3bf5698b3b2feea1d951c1a29e28750daff4c8a59cf740f026b09"
+  },
+  "id": "vt7OCtQ4WJq0EpD2",
+  "tags": []
+}

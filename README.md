@@ -49,15 +49,19 @@ docker compose down -v       # also remove volumes (wipes all data)
 | Workflow | Description |
 |----------|-------------|
 | [LinkedIn Post Generator](linkedin-post-generator/) | Dual-trigger (Telegram + Google Sheets schedule) → AI agents → human approval → LinkedIn post, archived to Notion |
+| [Telegram Atlas Agent](telgram-atlas-agent/) | Personal AI assistant on Telegram — web search, weather, Gmail send/read, and Google Calendar management |
 
 ## Project layout
 
 ```
 awesome-n8n-agents/
-├── docker-compose.yml          # n8n + Postgres stack
-├── .env.example                # environment variable template
+├── docker-compose.yml              # n8n + Postgres stack
+├── .env.example                    # environment variable template
 ├── linkedin-post-generator/
-│   ├── Linkedin Post Generator.json          # importable n8n workflow
+│   ├── Linkedin Post Generator.json
+│   └── README.md
+├── telgram-atlas-agent/
+│   ├── Personal Agent.json
 │   └── README.md
 └── README.md
 ```

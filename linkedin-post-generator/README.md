@@ -49,7 +49,7 @@ Content Generation Agent
 3. **Conversational reply** — Non-post Telegram messages get an immediate reply; the pipeline stops here.
 4. **Normalize & merge** — Code nodes convert both sources into a common `{ userMessage, from, source, rowNumber }` shape before merging.
 5. **Web research** — Tavily searches for "Latest trends and real world impact of <topic>" to gather fresh data, statistics, and examples.
-6. **Generate content** — The Content Generation Agent (`gpt-4.1-mini`) writes a 150–300 word LinkedIn post using the topic and Tavily research results. It adds a strong hook, short paragraphs, real insights, and 5–10 hashtags. Output format: `TOPIC: …` / `POST DRAFT: …`.
+6. **Generate content** — The Content Generation Agent (`gpt-5`) writes a 150–300 word LinkedIn post using the topic and Tavily research results. It adds a strong hook, short paragraphs, real insights, and 5–10 hashtags. Output format: `TOPIC: …` / `POST DRAFT: …`.
 7. **Extract draft** — A Code node parses the agent output into `{ topic, postDraft }`.
 8. **Approval via Telegram** — "LinkedIn post okay?" sends the draft with **Approve / Decline** buttons using `sendAndWait`.
 9. **Human in Loop** — Branches on `data.approved`.
@@ -74,7 +74,7 @@ Content Generation Agent
 | Normalize (Telegram) | Converts Telegram message to common payload |
 | Merge Paths | Joins both trigger paths |
 | Web Search (Tavily) | Searches latest trends and real-world impact for the topic |
-| Content Generation Agent (gpt-4.1-mini) | Writes the LinkedIn post using topic + research data |
+| Content Generation Agent (gpt-5) | Writes the LinkedIn post using topic + research data |
 | OpenAI (Content) | LLM sub-node powering Content Generation Agent |
 | Extract Draft | Parses TOPIC / POST DRAFT from agent output |
 | LinkedIn post okay? (Telegram sendAndWait) | Sends draft with Approve / Decline buttons |
@@ -94,7 +94,7 @@ Content Generation Agent
 - n8n running locally (see [root README](../README.md))
 - Accounts and credentials for:
   - **Telegram** — Bot token from [@BotFather](https://t.me/BotFather)
-  - **OpenAI** — API key (workflow uses `gpt-4.1-mini`)
+  - **OpenAI** — API key (workflow uses `gpt-4.1-mini` and `gpt-5`)
   - **Tavily** — API key for web search ([tavily.com](https://tavily.com))
   - **Google Sheets** — OAuth2 or Service Account with read/write access to your content spreadsheet
   - **LinkedIn** — OAuth2 app with `r_liteprofile` and `w_member_social` scopes

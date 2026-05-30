@@ -267,9 +267,9 @@
       "parameters": {
         "model": {
           "__rl": true,
-          "value": "gpt-4.1-mini",
+          "value": "gpt-5",
           "mode": "list",
-          "cachedResultName": "gpt-4.1-mini"
+          "cachedResultName": "gpt-5"
         },
         "builtInTools": {},
         "options": {}
@@ -896,7 +896,7 @@
     "binaryMode": "separate",
     "availableInMCP": true
   },
-  "versionId": "553205d7-d6cf-4ee1-8293-bc9688889606",
+  "versionId": "b8be7ce5-5b5a-4727-91d2-95eabec5d8a2",
   "meta": {
     "aiBuilderAssisted": true,
     "builderVariant": "mcp",
